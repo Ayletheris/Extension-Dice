@@ -195,7 +195,7 @@ function registerFunctionTools() {
         registerFunctionTool({
             name: 'RollTheDice',
             displayName: 'Dice Roll',
-            description: 'Rolls the dice using the provided formula and returns the numeric result. Use when it is necessary to roll the dice to determine the outcome of an action or when the user requests it.',
+            description: 'Rolls the dice using the provided formula and returns the total and all individual roll values. To roll multiple dice at once, use a formula like 5d20 (rolls 5 twenty-sided dice in a single call). Never make multiple calls when a single NdX formula can cover all the rolls needed.',
             parameters: rollDiceSchema,
             action: async (args) => {
                 if (!args?.formula) args = { formula: '1d6' };
