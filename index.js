@@ -195,7 +195,7 @@ function registerFunctionTools() {
         registerFunctionTool({
             name: 'RollTheDice',
             displayName: 'Dice Roll',
-            description: 'Rolls the dice using the provided formula and returns the total and all individual roll values. To roll multiple dice at once, use a formula like 5d20 (rolls 5 twenty-sided dice in a single call). Never make multiple calls when a single NdX formula can cover all the rolls needed.',
+            description: 'Rolls the dice using the provided formula and returns the total and every individual roll value indexed by position. IMPORTANT: always use a single call with NdX to roll N dice — e.g. 100d100 to roll one hundred d100s. The response lists each roll by index so you can map roll[0] to item[0], roll[1] to item[1], etc. NEVER make multiple separate calls when one NdX formula covers all the rolls.',
             parameters: rollDiceSchema,
             action: async (args) => {
                 if (!args?.formula) args = { formula: '1d6' };
@@ -203,9 +203,10 @@ function registerFunctionTools() {
                     ? doDiceRollUnique(args.formula, true)
                     : await doDiceRoll(args.formula, true);
                 const uniqueNote = args.unique ? ' (unique)' : '';
+                const indexedRolls = roll.rolls.map((r, i) => `[${i}] ${r}`).join(', ');
                 const result = args.who
-                    ? `${args.who} rolls a ${args.formula}${uniqueNote}. The result is: ${roll.total}. Individual rolls: ${roll.rolls.join(', ')}`
-                    : `The result of a ${args.formula}${uniqueNote} roll is: ${roll.total}. Individual rolls: ${roll.rolls.join(', ')}`;
+                    ? `${args.who} rolls ${args.formula}${uniqueNote}. Total: ${roll.total}. Rolls by index: ${indexedRolls}`
+                    : `${args.formula}${uniqueNote} roll. Total: ${roll.total}. Rolls by index: ${indexedRolls}`;
                 return result;
             },
             formatMessage: () => '',
