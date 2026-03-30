@@ -36,6 +36,41 @@ function getSettings() {
 }
 
 /**
+ * Roll dice with unique (non-repeating) values using a shuffled pool.
+ * Requires a simple NdX formula (e.g., 3d6). Count must not exceed sides.
+ * @param {string} formula Dice formula
+ * @param {boolean} quiet Suppress chat output
+ * @returns {{total: string, rolls: Array<string>}} Roll result
+ */
+function doDiceRollUnique(formula, quiet = false) {
+    const nullValue = { total: '', rolls: [] };
+    const match = formula.match(/^(\d+)d(\d+)$/i);
+    if (!match) {
+        toastr.warning('Unique rolls require a simple NdX formula (e.g., 3d6)');
+        return nullValue;
+    }
+    const count = parseInt(match[1], 10);
+    const sides = parseInt(match[2], 10);
+    if (count > sides) {
+        toastr.warning(`Cannot roll ${count} unique values on a d${sides} — not enough faces`);
+        return nullValue;
+    }
+    // Fisher-Yates shuffle of [1..sides], take first `count`
+    const pool = Array.from({ length: sides }, (_, i) => i + 1);
+    for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    const rolls = pool.slice(0, count);
+    const total = rolls.reduce((a, b) => a + b, 0);
+    if (!quiet) {
+        const context = SillyTavern.getContext();
+        context.sendSystemMessage('generic', `${context.name1} rolls ${formula} (unique). The result is: ${total} (${rolls.join(', ')})`, { isSmallSys: true });
+    }
+    return { total: String(total), rolls: rolls.map(String) };
+}
+
+/**
  * Roll the dice.
  * @param {string} customDiceFormula Dice formula
  * @param {boolean} quiet Suppress chat output
@@ -181,7 +216,9 @@ jQuery(async function () {
         aliases: ['r'],
         callback: async (args, value) => {
             const quiet = isTrueBoolean(String(args.quiet));
-            const result = await doDiceRoll(String(value || '1d6'), quiet);
+            const unique = isTrueBoolean(String(args.unique ?? 'false'));
+            const formula = String(value || '1d6');
+            const result = unique ? doDiceRollUnique(formula, quiet) : await doDiceRoll(formula, quiet);
             return result.total;
         },
         helpString: 'Roll the dice.',
@@ -190,6 +227,14 @@ jQuery(async function () {
             SlashCommandNamedArgument.fromProps({
                 name: 'quiet',
                 description: 'Do not display the result in chat',
+                isRequired: false,
+                typeList: [ARGUMENT_TYPE.BOOLEAN],
+                defaultValue: String(false),
+                enumProvider: commonEnumProviders.boolean('trueFalse'),
+            }),
+            SlashCommandNamedArgument.fromProps({
+                name: 'unique',
+                description: 'Ensure no repeated values across all dice in the roll',
                 isRequired: false,
                 typeList: [ARGUMENT_TYPE.BOOLEAN],
                 defaultValue: String(false),
