@@ -181,6 +181,10 @@ function registerFunctionTools() {
                     type: 'string',
                     description: 'A dice formula to roll, e.g. 2d6',
                 },
+                unique: {
+                    type: 'boolean',
+                    description: 'If true, each die in the roll will show a different value (no repeats). Use when the user explicitly asks for unique or non-repeating rolls, or when the context implies drawing without replacement, picking distinct outcomes, or when results must all differ — e.g. "roll unique", "unique roll", "no repeats", "draw 3 cards", "assign different scores to each stat", "no two results can be the same".',
+                },
             },
             required: [
                 'who',
@@ -195,10 +199,13 @@ function registerFunctionTools() {
             parameters: rollDiceSchema,
             action: async (args) => {
                 if (!args?.formula) args = { formula: '1d6' };
-                const roll = await doDiceRoll(args.formula, true);
+                const roll = args.unique
+                    ? doDiceRollUnique(args.formula, true)
+                    : await doDiceRoll(args.formula, true);
+                const uniqueNote = args.unique ? ' (unique)' : '';
                 const result = args.who
-                    ? `${args.who} rolls a ${args.formula}. The result is: ${roll.total}. Individual rolls: ${roll.rolls.join(', ')}`
-                    : `The result or a ${args.formula} roll is: ${roll.total}. Individual rolls: ${roll.rolls.join(', ')}`;
+                    ? `${args.who} rolls a ${args.formula}${uniqueNote}. The result is: ${roll.total}. Individual rolls: ${roll.rolls.join(', ')}`
+                    : `The result of a ${args.formula}${uniqueNote} roll is: ${roll.total}. Individual rolls: ${roll.rolls.join(', ')}`;
                 return result;
             },
             formatMessage: () => '',
