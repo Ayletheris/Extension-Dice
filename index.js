@@ -179,54 +179,47 @@ function registerFunctionTools() {
                 },
                 formula: {
                     type: 'string',
-                    description: 'A dice formula to roll, e.g. 2d6. When using items, only the die face matters (e.g. d100) — the count is ignored and derived from the items list instead.',
-                },
-                unique: {
-                    type: 'boolean',
-                    description: 'If true, each die in the roll will show a different value (no repeats). Use when the user explicitly asks for unique or non-repeating rolls, or when the context implies drawing without replacement, picking distinct outcomes, or when results must all differ — e.g. "roll unique", "unique roll", "no repeats", "draw 3 cards", "assign different scores to each stat", "no two results can be the same".',
+                    description: 'Dice formula for plain rolls, e.g. 2d6. Ignored in selection mode.',
                 },
                 items: {
                     type: 'array',
                     items: { type: 'string' },
-            description: 'REQUIRED when assigning rolls to named things (tags, scenes, characters, options, etc.). Pass the full list here — one die is rolled per entry and results come back as "item: roll" pairs. Never use NdX counting and map the indices yourself; always use this parameter for named lists.',
+                    description: 'The full ordered list of items to select from (tags, actions, scenes, etc.). Item at index 0 is ID 1, index 1 is ID 2, and so on. Must be the complete list — the die size is derived from this length.',
+                },
+                select: {
+                    type: 'number',
+                    description: 'How many items to select. The tool rolls select-many dice each with items.length faces (e.g. 5 items from 20 = 5d20), and the rolled numbers are the IDs of the selected items. Always unique — no item can be selected twice.',
                 },
             },
             required: [
                 'who',
-                'formula',
                 'items',
+                'select',
             ],
         });
 
         registerFunctionTool({
             name: 'RollTheDice',
             displayName: 'Dice Roll',
-            description: 'Rolls dice and returns final results. Call this tool ONCE per task — the results are final, do not re-roll. Two modes: (1) NAMED MODE — when assigning a roll to each item in a list (tags, scenes, characters, options, etc.), you MUST use the items parameter; pass the complete list and the die face in formula (e.g. d100), and get back item:roll pairs. Do NOT use NdX counting and map manually — always use items for named lists. (2) PLAIN MODE — for a simple roll with no named items, use a standard formula like 2d6.',
+            description: 'Selects items randomly by dice. Pass the full ordered list in items and how many to pick in select. The tool rolls select-d-total (e.g. 5d20 for 5 from 20), treats each result as an item ID, and returns a table of only the selected items. Call this ONCE — results are final, do not re-roll.',
             parameters: rollDiceSchema,
             action: async (args) => {
-                if (!args?.formula) args = { formula: '1d6' };
-
-                // Named-item mode: derive count from the items array
-                if (Array.isArray(args.items) && args.items.length > 0) {
-                    const dieFace = (args.formula.match(/d\d+/i) ?? ['d6'])[0];
-                    const adjustedFormula = `${args.items.length}${dieFace}`;
-                    const roll = args.unique
-                        ? doDiceRollUnique(adjustedFormula, true)
-                        : await doDiceRoll(adjustedFormula, true);
-                    const pairs = args.items.map((item, i) => `${item}: ${roll.rolls[i] ?? '?'}`).join('\n');
-                    return `FINAL RESULTS — do not re-roll, proceed with these values.\nRolls (${dieFace}${args.unique ? ', unique' : ''}):\n${pairs}`;
+                // Selection mode
+                if (Array.isArray(args.items) && args.items.length > 0 && args.select > 0) {
+                    const total = args.items.length;
+                    const count = Math.min(args.select, total);
+                    const roll = doDiceRollUnique(`${count}d${total}`, true);
+                    const selected = roll.rolls
+                        .map(id => ({ id: Number(id), name: args.items[Number(id) - 1] ?? '?' }))
+                        .sort((a, b) => a.id - b.id);
+                    const table = '| ID | Item |\n|---|---|\n' + selected.map(s => `| ${s.id} | ${s.name} |`).join('\n');
+                    return `FINAL RESULTS — do not re-roll, proceed with these.\nSelected ${count} of ${total}:\n${table}`;
                 }
 
-                // Standard mode
-                const roll = args.unique
-                    ? doDiceRollUnique(args.formula, true)
-                    : await doDiceRoll(args.formula, true);
-                const uniqueNote = args.unique ? ' (unique)' : '';
-                const indexedRolls = roll.rolls.map((r, i) => `[${i}] ${r}`).join(', ');
-                const result = args.who
-                    ? `${args.who} rolls ${args.formula}${uniqueNote}. Total: ${roll.total}. Rolls by index: ${indexedRolls}`
-                    : `${args.formula}${uniqueNote} roll. Total: ${roll.total}. Rolls by index: ${indexedRolls}`;
-                return result;
+                // Plain roll fallback
+                if (!args?.formula) args = { ...args, formula: '1d6' };
+                const roll = await doDiceRoll(args.formula, true);
+                return `${args.formula} roll. Total: ${roll.total}. Rolls: ${roll.rolls.join(', ')}`;
             },
             formatMessage: () => '',
         });
