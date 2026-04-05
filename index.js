@@ -214,7 +214,7 @@ function registerFunctionTools() {
                         ? doDiceRollUnique(adjustedFormula, true)
                         : await doDiceRoll(adjustedFormula, true);
                     const pairs = args.items.map((item, i) => `${item}: ${roll.rolls[i] ?? '?'}`).join('\n');
-                    return `Rolls (${dieFace}${args.unique ? ', unique' : ''}):\n${pairs}`;
+                    return `FINAL RESULTS — do not re-roll, proceed with these values.\nRolls (${dieFace}${args.unique ? ', unique' : ''}):\n${pairs}`;
                 }
 
                 // Standard mode
