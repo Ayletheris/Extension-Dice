@@ -221,7 +221,7 @@ function registerFunctionTools() {
                 const roll = await doDiceRoll(args.formula, true);
                 return `${args.formula} roll. Total: ${roll.total}. Rolls: ${roll.rolls.join(', ')}`;
             },
-            formatMessage: (args, result) => result,
+            formatMessage: (_args, result) => result,
         });
     } catch (error) {
         console.error('Dice: Error registering function tools', error);
