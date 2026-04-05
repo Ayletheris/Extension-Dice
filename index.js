@@ -201,7 +201,7 @@ function registerFunctionTools() {
         registerFunctionTool({
             name: 'RollTheDice',
             displayName: 'Dice Roll',
-            description: 'Rolls dice and returns results. Two modes: (1) NAMED MODE — when assigning a roll to each item in a list (tags, scenes, characters, options, etc.), you MUST use the items parameter; pass the complete list and the die face in formula (e.g. d100), and get back item:roll pairs. Do NOT use NdX counting and map manually — always use items for named lists. (2) PLAIN MODE — for a simple roll with no named items, use a standard formula like 2d6.',
+            description: 'Rolls dice and returns final results. Call this tool ONCE per task — the results are final, do not re-roll. Two modes: (1) NAMED MODE — when assigning a roll to each item in a list (tags, scenes, characters, options, etc.), you MUST use the items parameter; pass the complete list and the die face in formula (e.g. d100), and get back item:roll pairs. Do NOT use NdX counting and map manually — always use items for named lists. (2) PLAIN MODE — for a simple roll with no named items, use a standard formula like 2d6.',
             parameters: rollDiceSchema,
             action: async (args) => {
                 if (!args?.formula) args = { formula: '1d6' };
