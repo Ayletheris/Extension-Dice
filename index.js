@@ -179,11 +179,16 @@ function registerFunctionTools() {
                 },
                 formula: {
                     type: 'string',
-                    description: 'A dice formula to roll, e.g. 2d6',
+                    description: 'A dice formula to roll, e.g. 2d6. When using items, only the die face matters (e.g. d100) — the count is ignored and derived from the items list instead.',
                 },
                 unique: {
                     type: 'boolean',
                     description: 'If true, each die in the roll will show a different value (no repeats). Use when the user explicitly asks for unique or non-repeating rolls, or when the context implies drawing without replacement, picking distinct outcomes, or when results must all differ — e.g. "roll unique", "unique roll", "no repeats", "draw 3 cards", "assign different scores to each stat", "no two results can be the same".',
+                },
+                items: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: 'A complete list of named items to assign rolls to. When provided, one die is rolled per item and results are returned as "item: roll" pairs. IMPORTANT: populate this with the FULL list of all items before calling — the tool rolls exactly as many dice as there are entries, so a partial list means partial results. Use this whenever you are assigning rolls to a list of things (tags, characters, options, etc.).',
                 },
             },
             required: [
@@ -195,10 +200,23 @@ function registerFunctionTools() {
         registerFunctionTool({
             name: 'RollTheDice',
             displayName: 'Dice Roll',
-            description: 'Rolls the dice using the provided formula and returns the total and every individual roll value indexed by position. IMPORTANT: always use a single call with NdX to roll N dice — e.g. 100d100 to roll one hundred d100s. The response lists each roll by index so you can map roll[0] to item[0], roll[1] to item[1], etc. NEVER make multiple separate calls when one NdX formula covers all the rolls. CRITICAL: always finish writing any list, table, or content in full BEFORE calling this tool — never call mid-sentence or mid-list.',
+            description: 'Rolls the dice using the provided formula and returns the total and every individual roll value indexed by position. To roll N dice at once use NdX (e.g. 100d100). IMPORTANT: when rolling for a list of named items, pass them all in the items parameter — the tool rolls one die per item and returns item:roll pairs, ensuring every item gets a result. NEVER call this tool mid-list; finish enumerating all items first, then make a single call.',
             parameters: rollDiceSchema,
             action: async (args) => {
                 if (!args?.formula) args = { formula: '1d6' };
+
+                // Named-item mode: derive count from the items array
+                if (Array.isArray(args.items) && args.items.length > 0) {
+                    const dieFace = (args.formula.match(/d\d+/i) ?? ['d6'])[0];
+                    const adjustedFormula = `${args.items.length}${dieFace}`;
+                    const roll = args.unique
+                        ? doDiceRollUnique(adjustedFormula, true)
+                        : await doDiceRoll(adjustedFormula, true);
+                    const pairs = args.items.map((item, i) => `${item}: ${roll.rolls[i] ?? '?'}`).join('\n');
+                    return `Rolls (${dieFace}${args.unique ? ', unique' : ''}):\n${pairs}`;
+                }
+
+                // Standard mode
                 const roll = args.unique
                     ? doDiceRollUnique(args.formula, true)
                     : await doDiceRoll(args.formula, true);
