@@ -195,7 +195,7 @@ function registerFunctionTools() {
         registerFunctionTool({
             name: 'RollTheDice',
             displayName: 'Dice Roll',
-            description: 'Rolls the dice using the provided formula and returns the total and every individual roll value indexed by position. IMPORTANT: always use a single call with NdX to roll N dice — e.g. 100d100 to roll one hundred d100s. The response lists each roll by index so you can map roll[0] to item[0], roll[1] to item[1], etc. NEVER make multiple separate calls when one NdX formula covers all the rolls.',
+            description: 'Rolls the dice using the provided formula and returns the total and every individual roll value indexed by position. IMPORTANT: always use a single call with NdX to roll N dice — e.g. 100d100 to roll one hundred d100s. The response lists each roll by index so you can map roll[0] to item[0], roll[1] to item[1], etc. NEVER make multiple separate calls when one NdX formula covers all the rolls. CRITICAL: always finish writing any list, table, or content in full BEFORE calling this tool — never call mid-sentence or mid-list.',
             parameters: rollDiceSchema,
             action: async (args) => {
                 if (!args?.formula) args = { formula: '1d6' };
