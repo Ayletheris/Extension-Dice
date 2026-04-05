@@ -188,7 +188,7 @@ function registerFunctionTools() {
                 items: {
                     type: 'array',
                     items: { type: 'string' },
-                    description: 'A complete list of named items to assign rolls to. When provided, one die is rolled per item and results are returned as "item: roll" pairs. IMPORTANT: populate this with the FULL list of all items before calling — the tool rolls exactly as many dice as there are entries, so a partial list means partial results. Use this whenever you are assigning rolls to a list of things (tags, characters, options, etc.).',
+            description: 'REQUIRED when assigning rolls to named things (tags, scenes, characters, options, etc.). Pass the full list here — one die is rolled per entry and results come back as "item: roll" pairs. Never use NdX counting and map the indices yourself; always use this parameter for named lists.',
                 },
             },
             required: [
@@ -200,7 +200,7 @@ function registerFunctionTools() {
         registerFunctionTool({
             name: 'RollTheDice',
             displayName: 'Dice Roll',
-            description: 'Rolls the dice using the provided formula and returns the total and every individual roll value indexed by position. To roll N dice at once use NdX (e.g. 100d100). IMPORTANT: when rolling for a list of named items, pass them all in the items parameter — the tool rolls one die per item and returns item:roll pairs, ensuring every item gets a result. NEVER call this tool mid-list; finish enumerating all items first, then make a single call.',
+            description: 'Rolls dice and returns results. Two modes: (1) NAMED MODE — when assigning a roll to each item in a list (tags, scenes, characters, options, etc.), you MUST use the items parameter; pass the complete list and the die face in formula (e.g. d100), and get back item:roll pairs. Do NOT use NdX counting and map manually — always use items for named lists. (2) PLAIN MODE — for a simple roll with no named items, use a standard formula like 2d6.',
             parameters: rollDiceSchema,
             action: async (args) => {
                 if (!args?.formula) args = { formula: '1d6' };
