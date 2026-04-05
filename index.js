@@ -194,6 +194,7 @@ function registerFunctionTools() {
             required: [
                 'who',
                 'formula',
+                'items',
             ],
         });
 
