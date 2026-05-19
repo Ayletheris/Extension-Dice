@@ -212,8 +212,7 @@ function registerFunctionTools() {
                     const selected = roll.rolls
                         .map(id => ({ id: Number(id), name: args.items[Number(id) - 1] ?? '?' }))
                         .sort((a, b) => a.id - b.id);
-                    const table = '| ID | Item |\n|---|---|\n' + selected.map(s => `| ${s.id} | ${s.name} |`).join('\n');
-                    return `FINAL RESULTS — do not re-roll, proceed with these.\nSelected ${count} of ${total}:\n${table}`;
+                    return selected.map(s => s.name).join('\n');
                 }
 
                 // Plain roll fallback
